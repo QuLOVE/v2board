@@ -22,7 +22,7 @@ class V2boardInstall extends Command
      *
      * @var string
      */
-    protected $description = 'v2board 安装';
+    protected $description = 'v2board Installation';
 
     /**
      * Create a new command instance.
@@ -49,59 +49,59 @@ class V2boardInstall extends Command
             $this->info("   \_/  |_____|____/ \___/ \__,_|_|  \__,_| ");
             if (\File::exists(base_path() . '/.env')) {
                 $securePath = config('v2board.secure_path', config('v2board.frontend_admin_path', hash('crc32b', config('app.key'))));
-                $this->info("访问 http(s)://你的站点/{$securePath} 进入管理面板，你可以在用户中心修改你的密码。");
-                abort(500, '如需重新安装请删除目录下.env文件');
+                $this->info("Visit http(s)://Your site/{$securePath} Go to the admin panel where you can change your password in the user centre.");
+                abort(500, 'Delete the .env file in the directory if you need to re-install it');
             }
 
             if (!copy(base_path() . '/.env.example', base_path() . '/.env')) {
-                abort(500, '复制环境文件失败，请检查目录权限');
+                abort(500, 'Copying environment files failed, check directory permissions');
             }
             $this->saveToEnv([
                 'APP_KEY' => 'base64:' . base64_encode(Encrypter::generateKey('AES-256-CBC')),
-                'DB_HOST' => $this->ask('请输入数据库地址（默认:localhost）', 'localhost'),
-                'DB_DATABASE' => $this->ask('请输入数据库名'),
-                'DB_USERNAME' => $this->ask('请输入数据库用户名'),
-                'DB_PASSWORD' => $this->ask('请输入数据库密码')
+                'DB_HOST' => $this->ask('Please enter database address（default:localhost）', 'localhost'),
+                'DB_DATABASE' => $this->ask('Enter the database name'),
+                'DB_USERNAME' => $this->ask('Enter the database user name'),
+                'DB_PASSWORD' => $this->ask('Enter the database password')
             ]);
             \Artisan::call('config:clear');
             \Artisan::call('config:cache');
             try {
                 DB::connection()->getPdo();
             } catch (\Exception $e) {
-                abort(500, '数据库连接失败');
+                abort(500, 'Database connection failed');
             }
             $file = \File::get(base_path() . '/database/install.sql');
             if (!$file) {
-                abort(500, '数据库文件不存在');
+                abort(500, 'Database file does not exist');
             }
             $sql = str_replace("\n", "", $file);
             $sql = preg_split("/;/", $sql);
             if (!is_array($sql)) {
-                abort(500, '数据库文件格式有误');
+                abort(500, 'Incorrect database file format');
             }
-            $this->info('正在导入数据库请稍等...');
+            $this->info('Please wait while the database is being imported...');
             foreach ($sql as $item) {
                 try {
                     DB::select(DB::raw($item));
                 } catch (\Exception $e) {
                 }
             }
-            $this->info('数据库导入完成');
+            $this->info('Database import complete');
             $email = '';
             while (!$email) {
-                $email = $this->ask('请输入管理员邮箱?');
+                $email = $this->ask('Enter the administrator email address?');
             }
             $password = Helper::guid(false);
             if (!$this->registerAdmin($email, $password)) {
-                abort(500, '管理员账号注册失败，请重试');
+                abort(500, 'Administrator account registration failed, please try again');
             }
 
-            $this->info('一切就绪');
-            $this->info("管理员邮箱：{$email}");
-            $this->info("管理员密码：{$password}");
+            $this->info('Everythings ready');
+            $this->info("Administrator email:{$email}");
+            $this->info("Administrator password:{$password}");
 
             $defaultSecurePath = hash('crc32b', config('app.key'));
-            $this->info("访问 http(s)://你的站点/{$defaultSecurePath} 进入管理面板，你可以在用户中心修改你的密码。");
+            $this->info("Visit http(s)://your site/{$defaultSecurePath} to get to the admin panel where you can change your password in the user centre.");
         } catch (\Exception $e) {
             $this->error($e->getMessage());
         }
@@ -112,7 +112,7 @@ class V2boardInstall extends Command
         $user = new User();
         $user->email = $email;
         if (strlen($password) < 8) {
-            abort(500, '管理员密码长度最小为8位字符');
+            abort(500, 'Minimum administrator password length is 8 characters');
         }
         $user->password = password_hash($password, PASSWORD_DEFAULT);
         $user->uuid = Helper::guid(true);

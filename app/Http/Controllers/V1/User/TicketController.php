@@ -199,11 +199,11 @@ class TicketController extends Controller
 			$user = User::find($userid);
 			
 			if ($user) {
-				$transfer_enable = $this->getFlowData($user->transfer_enable); // 总流量
+				$transfer_enable = $this->getFlowData($user->transfer_enable); // total flow
 				$remaining_traffic = $this->getFlowData($user->transfer_enable - $user->u - $user->d); // 剩余流量
-				$u = $this->getFlowData($user->u); // 上传
-				$d = $this->getFlowData($user->d); // 下载
-				$expired_at = date("Y-m-d h:m:s", $user->expired_at); // 到期时间
+				$u = $this->getFlowData($user->u); // upload
+				$d = $this->getFlowData($user->d); // download
+				$expired_at = date("Y-m-d h:m:s", $user->expired_at); // expiry
 				if (isset($_SERVER['HTTP_X_REAL_IP'])) {
 				$ip_address = $_SERVER['HTTP_X_REAL_IP'];
 				} elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -212,33 +212,33 @@ class TicketController extends Controller
 					$ip_address = $_SERVER['REMOTE_ADDR'];
 				}
 				
-				$api_url = "http://ip-api.com/json/{$ip_address}?fields=520191&lang=zh-CN";
+				$api_url = "http://ip-api.com/json/{$ip_address}?fields=520191&lang=en-US";
 				$response = file_get_contents($api_url);
 				$user_location = json_decode($response, true);
 				if ($user_location && $user_location['status'] === 'success') {
 					$location =  $user_location['city'] . ", " . $user_location['country'];
 				} else {
-					$location =  "无法确定用户地址";
+					$location =  "Unable to determine user address";
 				}
 				
 				$plan = Plan::where('id', $user->plan_id)->first();
-				$planName = $plan ? $plan->name : '未找到套餐信息'; // Check if plan data is available
+				$planName = $plan ? $plan->name : 'Package information not found'; // Check if plan data is available
 				
 				$money = $user->balance / 100;
 				$affmoney = $user->commission_balance / 100;
-				$telegramService->sendMessageWithAdmin("📮工单提醒 #{$ticket->id}\n———————————————\n邮箱：\n`{$user->email}`\n用户位置：\n`{$location}`\nIP:\n{$ip_address}\n套餐与流量：\n`{$planName} of {$transfer_enable}/{$remaining_traffic}`\n上传/下载：\n`{$u}/{$d}`\n到期时间：\n`{$expired_at}`\n余额/佣金余额：\n`{$money}/{$affmoney}`\n主题：\n`{$ticket->subject}`\n内容：\n`{$message}`", true);
+				$telegramService->sendMessageWithAdmin("📮Work Order Alerts #{$ticket->id}\n———————————————\nemail：\n`{$user->email}`\nuser location：\n`{$location}`\nIP:\n{$ip_address}\nPackages & Traffic：\n`{$planName} of {$transfer_enable}/{$remaining_traffic}`\nUp/Down：\n`{$u}/{$d}`\nExpiry：\n`{$expired_at}`\nBalance/commission balance：\n`{$money}/{$affmoney}`\nTopic：\n`{$ticket->subject}`\nDetails：\n`{$message}`", true);
 			} else {
 				// Handle case where user data is not found
 				$telegramService->sendMessageWithAdmin("User data not found for user ID: {$userid}", true);
 			}
 		} else {
-			$telegramService->sendMessageWithAdmin("📮工单提醒 #{$ticket->id}\n———————————————\n主题：\n`{$ticket->subject}`\n内容：\n`{$message}`", true);
+			$telegramService->sendMessageWithAdmin("📮Work Order Alerts #{$ticket->id}\n———————————————\nSubject：\n`{$ticket->subject}`\nContent：\n`{$message}`", true);
 		}
 	}
 
     private function getFlowData($b)
     {
-        $g = $b / (1024 * 1024 * 1024); // 转换流量数据
+        $g = $b / (1024 * 1024 * 1024); // Converting traffic data
         $m = $b / (1024 * 1024);
         if ($g >= 1) {
             $text = round($g, 2) . "GB";
